@@ -36,6 +36,30 @@ class SupabaseAuthDataSource {
     }
   }
 
+  Future<AuthUser> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      return _toAuthUser(response.user);
+    } on AuthException catch (error) {
+      // Ej.: "Invalid login credentials".
+      throw AuthFailure(error.message);
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _client.auth.signOut();
+    } on AuthException catch (error) {
+      throw AuthFailure(error.message);
+    }
+  }
+
   /// response.user puede ser null: se valida antes de usarlo
   /// para no caer en "Null check operator used on a null value".
   AuthUser _toAuthUser(User? user) {

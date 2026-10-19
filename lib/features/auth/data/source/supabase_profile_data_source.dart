@@ -20,4 +20,14 @@ class SupabaseProfileDataSource {
       'full_name': profile.fullName,
     });
   }
+
+  Future<Profile> getProfile(String id) async {
+    // single() falla si no hay exactamente una fila con ese id.
+    final row = await _client.from(_table).select().eq('id', id).single();
+    return Profile(
+      id: row['id'] as String,
+      username: row['username'] as String,
+      fullName: row['full_name'] as String,
+    );
+  }
 }
