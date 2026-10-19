@@ -20,8 +20,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
+
+  /// Solo para las validaciones locales (campos vacíos y contraseñas
+  /// distintas). Los errores del registro llegan en el estado del Bloc.
+  String? _validationError;
 
   @override
   void dispose() {
@@ -33,11 +35,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _showError(String message) {
-    setState(() {
-      _isLoading = false;
-      _errorMessage = message;
-    });
+  void _showValidationError(String message) {
+    setState(() => _validationError = message);
   }
 
   void _submit() {
@@ -49,67 +48,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fullName.isEmpty ||
         email.isEmpty ||
         password.isEmpty) {
-      _showError('Completa todos los campos');
+      _showValidationError('Completa todos los campos');
       return;
     }
     if (password != _confirmPasswordController.text) {
-      _showError('Las contraseñas no coinciden');
+      _showValidationError('Las contraseñas no coinciden');
       return;
     }
 
-    //Romper app para incluir el Registro
+    setState(() => _validationError = null);
     context.read<RegisterBloc>().add(
-      OnRegisterSubmittedEvent(
-        fullName: fullName,
+      RegisterSubmitted(
         username: username,
+        fullName: fullName,
         email: email,
         password: password,
       ),
     );
-
-    //Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crear cuenta')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: BlocListener<RegisterBloc, RegisterState>(
-            listener: (context, state) {
-              if (state is RegisterSuccessState) {
-                Navigator.pushReplacementNamed(context, '/home');
-              }
-            },
-            child: BlocBuilder<RegisterBloc, RegisterState>(
-              builder: (context, state) {
-                if (state is RegisterIdleState) {
-                  return registerForm();
-                } else if (state is RegisterLoadingState) {
-                  return Column(
-                    children: [
-                      Text("Espere mientras tanto"),
-                      CircularProgressIndicator(),
-                    ],
-                  );
-                } else if (state is RegisterSuccessState) {
-                  return SizedBox.shrink();
-                } else if (state is RegisterErrorState) {
-                  return Text("Error ${state.errorMessage}");
-                } else {
-                  return registerForm();
-                }
-              },
-            ),
-          ),
+      body: BlocListener<RegisterBloc, RegisterState>(
+        // Navegar es un efecto: debe ocurrir una sola vez por estado.
+        listener: (context, state) {
+          if (state.status == RegisterStatus.success) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/home',
+              arguments: state.profile,
+            );
+          }
+        },
+        child: BlocBuilder<RegisterBloc, RegisterState>(
+          builder: (context, state) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: _registerForm(
+                  isLoading: state.isLoading,
+                  errorMessage: _validationError ?? state.errorMessage,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget registerForm() {
+  Widget _registerForm({required bool isLoading, String? errorMessage}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -173,13 +163,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        if (_errorMessage != null) ...[
-          ErrorMessage(message: _errorMessage!),
+        if (errorMessage != null) ...[
+          ErrorMessage(message: errorMessage),
           const SizedBox(height: 16),
         ],
         PrimaryButton(
           label: 'Registrarme',
-          isLoading: _isLoading,
+          isLoading: isLoading,
           onPressed: _submit,
         ),
         const SizedBox(height: 8),
