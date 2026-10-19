@@ -1,4 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+// supabase_flutter también exporta una clase AuthUser: se oculta para usar la nuestra.
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 import 'package:moviles_auth/features/auth/domain/entities/auth_user.dart';
 
