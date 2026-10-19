@@ -7,8 +7,13 @@ import 'package:moviles_auth/features/auth/data/repository/profile_repository_im
 import 'package:moviles_auth/features/auth/data/source/supabase_auth_data_source.dart';
 import 'package:moviles_auth/features/auth/data/source/supabase_profile_data_source.dart';
 import 'package:moviles_auth/features/auth/domain/entities/profile.dart';
+import 'package:moviles_auth/features/auth/domain/entities/user_account.dart';
+import 'package:moviles_auth/features/auth/domain/repository/auth_repository.dart';
+import 'package:moviles_auth/features/auth/domain/repository/profile_repository.dart';
+import 'package:moviles_auth/features/auth/domain/usecases/sign_in_usecase.dart';
 import 'package:moviles_auth/features/auth/domain/usecases/sign_up_usecase.dart';
 import 'package:moviles_auth/features/home/ui/screens/home_screen.dart';
+import 'package:moviles_auth/features/login/ui/bloc/login_bloc.dart';
 import 'package:moviles_auth/features/login/ui/screens/login_screen.dart';
 import 'package:moviles_auth/features/register/ui/bloc/register_bloc.dart';
 import 'package:moviles_auth/features/register/ui/screens/register_screen.dart';
@@ -28,42 +33,57 @@ Future<void> main() async {
 }
 
 /// Root widget that declares the theme and the named routes.
+///
+/// Es la raíz de composición: el único lugar que conoce las clases
+/// concretas de la capa de datos. Los repositorios se crean una sola vez
+/// y se comparten entre registro e inicio de sesión.
 class App extends StatelessWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final client = Supabase.instance.client;
+    final AuthRepository authRepository = AuthRepositoryImpl(
+      SupabaseAuthDataSource(client),
+    );
+    final ProfileRepository profileRepository = ProfileRepositoryImpl(
+      SupabaseProfileDataSource(client),
+    );
+
     return MaterialApp(
       title: 'Moviles Auth',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       initialRoute: '/login',
       routes: {
-        '/login': (_) => const LoginScreen(),
-        // Único lugar donde se arma la cadena completa, con sus dos ramas.
+        '/login': (_) => BlocProvider(
+          create: (_) =>
+              LoginBloc(SignInUseCase(authRepository, profileRepository)),
+          child: const LoginScreen(),
+        ),
         '/register': (_) => BlocProvider(
-          create: (_) => RegisterBloc(
-            SignUpUseCase(
-              AuthRepositoryImpl(
-                SupabaseAuthDataSource(Supabase.instance.client),
-              ),
-              ProfileRepositoryImpl(
-                SupabaseProfileDataSource(Supabase.instance.client),
-              ),
-            ),
-          ),
+          create: (_) =>
+              RegisterBloc(SignUpUseCase(authRepository, profileRepository)),
           child: const RegisterScreen(),
         ),
-        // Recibe el Profile que mandó el registro.
         '/home': (context) {
-          final profile =
-              ModalRoute.of(context)!.settings.arguments as Profile?;
-          // El login de la Parte 1 todavía navega sin perfil: datos de ejemplo.
-          if (profile == null) return const HomeScreen();
-          return HomeScreen(
-            username: profile.username,
-            fullName: profile.fullName,
-          );
+          final arguments = ModalRoute.of(context)!.settings.arguments;
+          // Desde el login llega la cuenta completa, con el correo real.
+          if (arguments is UserAccount) {
+            return HomeScreen(
+              username: arguments.username,
+              fullName: arguments.fullName,
+              email: arguments.email,
+            );
+          }
+          // Desde el registro llega el Profile.
+          if (arguments is Profile) {
+            return HomeScreen(
+              username: arguments.username,
+              fullName: arguments.fullName,
+            );
+          }
+          return const HomeScreen();
         },
       },
     );
