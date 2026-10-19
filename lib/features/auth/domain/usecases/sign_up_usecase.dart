@@ -1,4 +1,5 @@
 import 'package:moviles_auth/features/auth/domain/entities/profile.dart';
+import 'package:moviles_auth/features/auth/domain/entities/user_account.dart';
 import 'package:moviles_auth/features/auth/domain/repository/auth_repository.dart';
 import 'package:moviles_auth/features/auth/domain/repository/profile_repository.dart';
 
@@ -23,7 +24,7 @@ class SignUpUseCase {
 
   SignUpUseCase(this._auth, this._profiles);
 
-  Future<Profile> call({
+  Future<UserAccount> call({
     required String username,
     required String fullName,
     required String email,
@@ -51,6 +52,6 @@ class SignUpUseCase {
         error,
       );
     }
-    return profile;
+    return UserAccount(user: user, profile: profile);
   }
 }

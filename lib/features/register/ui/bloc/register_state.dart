@@ -1,4 +1,4 @@
-import 'package:moviles_auth/features/auth/domain/entities/profile.dart';
+import 'package:moviles_auth/features/auth/domain/entities/user_account.dart';
 
 /// Los cuatro momentos por los que pasa el registro.
 enum RegisterStatus { initial, loading, success, failure }
@@ -7,12 +7,12 @@ enum RegisterStatus { initial, loading, success, failure }
 /// y [copyWith] cambia solo lo necesario, conservando el resto.
 class RegisterState {
   final RegisterStatus status;
-  final Profile? profile;
+  final UserAccount? account;
   final String? errorMessage;
 
   const RegisterState({
     this.status = RegisterStatus.initial,
-    this.profile,
+    this.account,
     this.errorMessage,
   });
 
@@ -20,12 +20,12 @@ class RegisterState {
 
   RegisterState copyWith({
     RegisterStatus? status,
-    Profile? profile,
+    UserAccount? account,
     String? errorMessage,
   }) {
     return RegisterState(
       status: status ?? this.status,
-      profile: profile ?? this.profile,
+      account: account ?? this.account,
       // El mensaje no se arrastra: si no llega uno nuevo, se limpia.
       errorMessage: errorMessage,
     );

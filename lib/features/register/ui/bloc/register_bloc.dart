@@ -22,13 +22,13 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   ) async {
     emit(state.copyWith(status: RegisterStatus.loading));
     try {
-      final profile = await _signUp(
+      final account = await _signUp(
         username: event.username,
         fullName: event.fullName,
         email: event.email,
         password: event.password,
       );
-      emit(state.copyWith(status: RegisterStatus.success, profile: profile));
+      emit(state.copyWith(status: RegisterStatus.success, account: account));
     } catch (error) {
       emit(
         state.copyWith(

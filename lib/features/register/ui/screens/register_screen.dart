@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Navigator.pushReplacementNamed(
               context,
               '/home',
-              arguments: state.profile,
+              arguments: state.account,
             );
           }
         },

@@ -6,11 +6,11 @@ import 'package:moviles_auth/features/auth/data/repository/auth_repository_impl.
 import 'package:moviles_auth/features/auth/data/repository/profile_repository_impl.dart';
 import 'package:moviles_auth/features/auth/data/source/supabase_auth_data_source.dart';
 import 'package:moviles_auth/features/auth/data/source/supabase_profile_data_source.dart';
-import 'package:moviles_auth/features/auth/domain/entities/profile.dart';
 import 'package:moviles_auth/features/auth/domain/entities/user_account.dart';
 import 'package:moviles_auth/features/auth/domain/repository/auth_repository.dart';
 import 'package:moviles_auth/features/auth/domain/repository/profile_repository.dart';
 import 'package:moviles_auth/features/auth/domain/usecases/sign_in_usecase.dart';
+import 'package:moviles_auth/features/auth/domain/usecases/sign_out_usecase.dart';
 import 'package:moviles_auth/features/auth/domain/usecases/sign_up_usecase.dart';
 import 'package:moviles_auth/features/home/ui/screens/home_screen.dart';
 import 'package:moviles_auth/features/login/ui/bloc/login_bloc.dart';
@@ -49,6 +49,7 @@ class App extends StatelessWidget {
     final ProfileRepository profileRepository = ProfileRepositoryImpl(
       SupabaseProfileDataSource(client),
     );
+    final signOut = SignOutUseCase(authRepository);
 
     return MaterialApp(
       title: 'Moviles Auth',
@@ -68,22 +69,16 @@ class App extends StatelessWidget {
         ),
         '/home': (context) {
           final arguments = ModalRoute.of(context)!.settings.arguments;
-          // Desde el login llega la cuenta completa, con el correo real.
+          // Login y registro mandan la cuenta completa, con el correo real.
           if (arguments is UserAccount) {
             return HomeScreen(
               username: arguments.username,
               fullName: arguments.fullName,
               email: arguments.email,
+              signOut: signOut,
             );
           }
-          // Desde el registro llega el Profile.
-          if (arguments is Profile) {
-            return HomeScreen(
-              username: arguments.username,
-              fullName: arguments.fullName,
-            );
-          }
-          return const HomeScreen();
+          return HomeScreen(signOut: signOut);
         },
       },
     );
